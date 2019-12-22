@@ -444,3 +444,5 @@ cover everything. We want to just help you with the first steps.
 Eventually you'll find your way inside the Redis code base :-)
 
 Enjoy!
+
+redis 源码注释，忘了是哪个版本了o(╥﹏╥)o
