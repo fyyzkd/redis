@@ -31,23 +31,45 @@
 #ifndef _ZIPLIST_H
 #define _ZIPLIST_H
 
+/* 分别表示ziplist的头尾节点标识 */
 #define ZIPLIST_HEAD 0
 #define ZIPLIST_TAIL 1
 
+/* 新建一个压缩列表，时间复杂度：O(1) */
 unsigned char *ziplistNew(void);
+/* 合并两个压缩列表 */
 unsigned char *ziplistMerge(unsigned char **first, unsigned char **second);
+/* 向ziplist中添加数据，返回的是一个新的ziplist
+ * ziplist是一个连续空间，执行追加操作会引发realloc,ziplist的内存位置可能发生变化
+ * */
 unsigned char *ziplistPush(unsigned char *zl, unsigned char *s, unsigned int slen, int where);
+/* 获取列表某个索引位置的值 */
 unsigned char *ziplistIndex(unsigned char *zl, int index);
-unsigned char *ziplistNext(unsigned char *zl, unsigned char *p);
+/* 返回压缩列表当前位置的前一值 */
 unsigned char *ziplistPrev(unsigned char *zl, unsigned char *p);
+/* 返回压缩列表当前位置的下一值 */
+unsigned char *ziplistNext(unsigned char *zl, unsigned char *p);
+/* 获取列表的信息*/
 unsigned int ziplistGet(unsigned char *p, unsigned char **sval, unsigned int *slen, long long *lval);
+/* 向列表中插入数据 */
 unsigned char *ziplistInsert(unsigned char *zl, unsigned char *p, unsigned char *s, unsigned int slen);
+/* 删除列表中某个节点 */
 unsigned char *ziplistDelete(unsigned char *zl, unsigned char **p);
+/* 从列表索引为index的位置开始，删除num个节点 */
 unsigned char *ziplistDeleteRange(unsigned char *zl, int index, unsigned int num);
+/* 列表比较*/
 unsigned int ziplistCompare(unsigned char *p, unsigned char *s, unsigned int slen);
+/* 压缩列表中查找某个值并返回包含改值的节点
+ * skip参数表示查找的时候每次比较要跳过的数据项个数
+ * ziplist表示hash 结构时，是按照一个field，一个value依次存储的，即偶数索引的数据项存field，奇数索引的数据项存value
+ * 按照field的值进行查找的时候，需要跳过value数据项
+ * */
 unsigned char *ziplistFind(unsigned char *p, unsigned char *vstr, unsigned int vlen, unsigned int skip);
+/* 返回列表包含的节点数 */
 unsigned int ziplistLen(unsigned char *zl);
+/* 返回压缩列表目前所占用的内存字节数  */
 size_t ziplistBlobLen(unsigned char *zl);
+/* */
 void ziplistRepr(unsigned char *zl);
 
 #ifdef REDIS_TEST
