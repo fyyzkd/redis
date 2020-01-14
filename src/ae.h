@@ -1,6 +1,7 @@
 /* A simple event-driven programming library. Originally I wrote this code
  * for the Jim's event-loop (Jim is a Tcl interpreter) but later translated
  * it in form of a library for easy reuse.
+ *
  * 一个简单的事件驱动的编程库，程序库封装了网络模型：evport、epoll、kqueue、select
  *
  * Copyright (c) 2006-2012, Salvatore Sanfilippo <antirez at gmail dot com>
