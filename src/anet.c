@@ -83,10 +83,12 @@ int anetSetBlock(char *err, int fd, int non_block) {
     return ANET_OK;
 }
 
+// anet 设置非阻塞的方式
 int anetNonBlock(char *err, int fd) {
     return anetSetBlock(err,fd,1);
 }
 
+// anet 设置阻塞的方式
 int anetBlock(char *err, int fd) {
     return anetSetBlock(err,fd,0);
 }
@@ -185,6 +187,7 @@ int anetSetSendBuffer(char *err, int fd, int buffsize)
     return ANET_OK;
 }
 
+// 设置TCP保持活跃连接状态，使用所有系统
 int anetTcpKeepAlive(char *err, int fd)
 {
     int yes = 1;
@@ -196,7 +199,8 @@ int anetTcpKeepAlive(char *err, int fd)
 }
 
 /* Set the socket send timeout (SO_SNDTIMEO socket option) to the specified
- * number of milliseconds, or disable it if the 'ms' argument is zero. */
+ * number of milliseconds, or disable it if the 'ms' argument is zero.
+ * 设置超时发送时间限制（0 取消超时机制）*/
 int anetSendTimeout(char *err, int fd, long long ms) {
     struct timeval tv;
 
@@ -381,6 +385,7 @@ int anetTcpNonBlockConnect(char *err, char *addr, int port)
     return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONBLOCK);
 }
 
+// 建立非阻塞式绑定TCP连接
 int anetTcpNonBlockBindConnect(char *err, char *addr, int port,
                                char *source_addr)
 {
@@ -388,6 +393,7 @@ int anetTcpNonBlockBindConnect(char *err, char *addr, int port,
             ANET_CONNECT_NONBLOCK);
 }
 
+// 建立非阻塞式绑定TCP连接
 int anetTcpNonBlockBestEffortBindConnect(char *err, char *addr, int port,
                                          char *source_addr)
 {
@@ -424,18 +430,21 @@ int anetUnixGenericConnect(char *err, char *path, int flags)
     return s;
 }
 
+// 建立unix domain sockets 连接（本地）
 int anetUnixConnect(char *err, char *path)
 {
     return anetUnixGenericConnect(err,path,ANET_CONNECT_NONE);
 }
 
+// 建立非阻塞式unix domain sockets 连接（本地）
 int anetUnixNonBlockConnect(char *err, char *path)
 {
     return anetUnixGenericConnect(err,path,ANET_CONNECT_NONBLOCK);
 }
 
 /* Like read(2) but make sure 'count' is read before to return
- * (unless error or EOF condition is encountered) */
+ * (unless error or EOF condition is encountered)
+ * // anet 网络读取文件到buffer中的操作*/
 int anetRead(int fd, char *buf, int count)
 {
     ssize_t nread, totlen = 0;
@@ -450,7 +459,8 @@ int anetRead(int fd, char *buf, int count)
 }
 
 /* Like write(2) but make sure 'count' is written before to return
- * (unless error is encountered) */
+ * (unless error is encountered)
+ * //  通过anet网络从buffer中写入文件的操作*/
 int anetWrite(int fd, char *buf, int count)
 {
     ssize_t nwritten, totlen = 0;
@@ -528,6 +538,7 @@ end:
     return s;
 }
 
+// 创建监听socket，并调用bind和listen 启动服务器开始监听端口
 int anetTcpServer(char *err, int port, char *bindaddr, int backlog)
 {
     return _anetTcpServer(err, port, bindaddr, AF_INET, backlog);
@@ -574,6 +585,7 @@ static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *l
     return fd;
 }
 
+// 调用accept，接受客户端的连接，返回ip和端口号
 int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port) {
     int fd;
     struct sockaddr_storage sa;
@@ -593,6 +605,7 @@ int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port) {
     return fd;
 }
 
+// unix domain socket 等待连接
 int anetUnixAccept(char *err, int s) {
     int fd;
     struct sockaddr_un sa;
@@ -603,6 +616,7 @@ int anetUnixAccept(char *err, int s) {
     return fd;
 }
 
+// 获取peer地址信息（ip、端口号、unix socket）
 int anetPeerToString(int fd, char *ip, size_t ip_len, int *port) {
     struct sockaddr_storage sa;
     socklen_t salen = sizeof(sa);
@@ -656,6 +670,7 @@ int anetFormatPeer(int fd, char *buf, size_t buf_len) {
     return anetFormatAddr(buf, buf_len, ip, port);
 }
 
+// 获取当前socket的ip和端口号
 int anetSockName(int fd, char *ip, size_t ip_len, int *port) {
     struct sockaddr_storage sa;
     socklen_t salen = sizeof(sa);
