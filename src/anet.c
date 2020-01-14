@@ -48,6 +48,7 @@
 
 #include "anet.h"
 
+// 设置错误提示（字符串）
 static void anetSetError(char *err, const char *fmt, ...)
 {
     va_list ap;
@@ -58,6 +59,7 @@ static void anetSetError(char *err, const char *fmt, ...)
     va_end(ap);
 }
 
+// 设置非阻塞机制启动状态
 int anetSetBlock(char *err, int fd, int non_block) {
     int flags;
 
@@ -91,7 +93,9 @@ int anetBlock(char *err, int fd) {
 
 /* Set TCP keep alive option to detect dead peers. The interval option
  * is only used for Linux as we are using Linux-specific APIs to set
- * the probe send time, interval, and count. */
+ * the probe send time, interval, and count.
+ * 设置4层TCP网络连接状态检测机制
+ * */
 int anetKeepAlive(char *err, int fd, int interval)
 {
     int val = 1;
@@ -105,7 +109,16 @@ int anetKeepAlive(char *err, int fd, int interval)
 #ifdef __linux__
     /* Default settings are more or less garbage, with the keepalive time
      * set to 7200 by default on Linux. Modify settings to make the feature
-     * actually useful. */
+     * actually useful.
+     * linux socket的keeplive 属性来检测网络连接的状态，TCP_KEEPIDLE，TCP_KEEPINTVL，TCP_KEEPCNT
+     * */
+
+    /*
+     * keepAlive =1 开启keepalive 属性
+     * keepIdle = 60 设置60s的空闲时间，如果该连接在60s没有任何数据往来，就进行连接探测
+     * keepInterval = 5 间隔5s 探测一次
+     * keepCount =3 尝试探测的次数，如果第一次探测收到响应，后2两次就不再发生了
+     * */
 
     /* Send first probe after interval. */
     val = interval;
@@ -138,6 +151,7 @@ int anetKeepAlive(char *err, int fd, int interval)
     return ANET_OK;
 }
 
+/* 设置TCP连接没有延时*/
 static int anetSetTcpNoDelay(char *err, int fd, int val)
 {
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == -1)
@@ -148,11 +162,13 @@ static int anetSetTcpNoDelay(char *err, int fd, int val)
     return ANET_OK;
 }
 
+// 启用TCP没有延迟
 int anetEnableTcpNoDelay(char *err, int fd)
 {
     return anetSetTcpNoDelay(err, fd, 1);
 }
 
+// 禁用 tcp 延迟
 int anetDisableTcpNoDelay(char *err, int fd)
 {
     return anetSetTcpNoDelay(err, fd, 0);
@@ -199,7 +215,8 @@ int anetSendTimeout(char *err, int fd, long long ms) {
  *
  * If flags is set to ANET_IP_ONLY the function only resolves hostnames
  * that are actually already IPv4 or IPv6 addresses. This turns the function
- * into a validating / normalizing function. */
+ * into a validating / normalizing function.
+ * 根据条件解析host主机名对应的IP地址(ip4/ip6)*/
 int anetGenericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len,
                        int flags)
 {
@@ -211,10 +228,12 @@ int anetGenericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len,
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;  /* specify socktype to avoid dups */
 
+    // 解析hostname
     if ((rv = getaddrinfo(host, NULL, &hints, &info)) != 0) {
         anetSetError(err, "%s", gai_strerror(rv));
         return ANET_ERR;
     }
+    // 根据类型解析判断解析的是ip4还是ip6
     if (info->ai_family == AF_INET) {
         struct sockaddr_in *sa = (struct sockaddr_in *)info->ai_addr;
         inet_ntop(AF_INET, &(sa->sin_addr), ipbuf, ipbuf_len);
@@ -227,14 +246,17 @@ int anetGenericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len,
     return ANET_OK;
 }
 
+// 获取主机名的IP地址
 int anetResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len) {
     return anetGenericResolve(err,host,ipbuf,ipbuf_len,ANET_NONE);
 }
 
+// 获取数字串格式的ip地址
 int anetResolveIP(char *err, char *host, char *ipbuf, size_t ipbuf_len) {
     return anetGenericResolve(err,host,ipbuf,ipbuf_len,ANET_IP_ONLY);
 }
 
+// 设置socket属性可以重复绑定
 static int anetSetReuseAddr(char *err, int fd) {
     int yes = 1;
     /* Make sure connection-intensive things like the redis benchmark
@@ -246,6 +268,7 @@ static int anetSetReuseAddr(char *err, int fd) {
     return ANET_OK;
 }
 
+// 创建一个TCP套接口
 static int anetCreateSocket(char *err, int domain) {
     int s;
     if ((s = socket(domain, SOCK_STREAM, 0)) == -1) {
@@ -265,11 +288,12 @@ static int anetCreateSocket(char *err, int domain) {
 #define ANET_CONNECT_NONE 0
 #define ANET_CONNECT_NONBLOCK 1
 #define ANET_CONNECT_BE_BINDING 2 /* Best effort binding. */
+// 建立TCP连接
 static int anetTcpGenericConnect(char *err, char *addr, int port,
                                  char *source_addr, int flags)
 {
     int s = ANET_ERR, rv;
-    char portstr[6];  /* strlen("65535") + 1; */
+    char portstr[6];  /* strlen("65535") + 1; 用字符串表示short 端口号 */
     struct addrinfo hints, *servinfo, *bservinfo, *p, *b;
 
     snprintf(portstr,sizeof(portstr),"%d",port);
@@ -345,11 +369,13 @@ end:
     }
 }
 
+// TCP 的默认连接
 int anetTcpConnect(char *err, char *addr, int port)
 {
     return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONE);
 }
 
+/* TCP的非阻塞连接 */
 int anetTcpNonBlockConnect(char *err, char *addr, int port)
 {
     return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONBLOCK);
@@ -369,6 +395,7 @@ int anetTcpNonBlockBestEffortBindConnect(char *err, char *addr, int port,
             ANET_CONNECT_NONBLOCK|ANET_CONNECT_BE_BINDING);
 }
 
+// 建立unix 本地连接
 int anetUnixGenericConnect(char *err, char *path, int flags)
 {
     int s;
@@ -462,6 +489,7 @@ static int anetV6Only(char *err, int s) {
     return ANET_OK;
 }
 
+// 开启侦听服务
 static int _anetTcpServer(char *err, int port, char *bindaddr, int af, int backlog)
 {
     int s = -1, rv;
@@ -528,9 +556,10 @@ int anetUnixServer(char *err, char *path, mode_t perm, int backlog)
     return s;
 }
 
+// socker 连接操作，等待连接，不出错误就一直等待
 static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
     int fd;
-    while(1) {
+    while(1) { // 循环等待连接
         fd = accept(s,sa,len);
         if (fd == -1) {
             if (errno == EINTR)
@@ -649,6 +678,7 @@ int anetSockName(int fd, char *ip, size_t ip_len, int *port) {
     return 0;
 }
 
+//按格式获取连接名称
 int anetFormatSock(int fd, char *fmt, size_t fmt_len) {
     char ip[INET6_ADDRSTRLEN];
     int port;
