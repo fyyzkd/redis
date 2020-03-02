@@ -32,20 +32,21 @@
 #define __INTSET_H
 #include <stdint.h>
 
+// 定义整数集合
 typedef struct intset {
-    uint32_t encoding;
-    uint32_t length;
-    int8_t contents[];
+    uint32_t encoding;  // 当前结构内所有元素的类型
+    uint32_t length;    // contents 中元素个数，即整数集合中元素个数
+    int8_t contents[];  // 整数集合中存储的元素
 } intset;
 
-intset *intsetNew(void);
-intset *intsetAdd(intset *is, int64_t value, uint8_t *success);
-intset *intsetRemove(intset *is, int64_t value, int *success);
-uint8_t intsetFind(intset *is, int64_t value);
-int64_t intsetRandom(intset *is);
-uint8_t intsetGet(intset *is, uint32_t pos, int64_t *value);
-uint32_t intsetLen(const intset *is);
-size_t intsetBlobLen(intset *is);
+intset *intsetNew(void);                                                    // 创建新的整数集合
+intset *intsetAdd(intset *is, int64_t value, uint8_t *success);             // 添加元素
+intset *intsetRemove(intset *is, int64_t value, int *success);              // 移除元素
+uint8_t intsetFind(intset *is, int64_t value);                              // 查找元素
+int64_t intsetRandom(intset *is);                                           // 随机返回一个整数元素
+uint8_t intsetGet(intset *is, uint32_t pos, int64_t *value);                // 获取指定位置的元素
+uint32_t intsetLen(const intset *is);                                      // 元素的总个数
+size_t intsetBlobLen(intset *is);                                           // 集合占用的内存字节
 
 #ifdef REDIS_TEST
 int intsetTest(int argc, char *argv[]);
